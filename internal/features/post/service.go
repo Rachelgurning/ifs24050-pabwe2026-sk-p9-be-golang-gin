@@ -191,7 +191,11 @@ func (s *Service) PublicList(f ListFilter) ([]PostResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ToResponses(posts), nil
+	out := ToResponses(posts)
+	for i := range out {
+		out[i].UserID = 0 // jangan bocorkan data internal ke endpoint publik
+	}
+	return out, nil
 }
 
 func (s *Service) PublicDetail(slug string) (*PostResponse, error) {
@@ -200,6 +204,7 @@ func (s *Service) PublicDetail(slug string) (*PostResponse, error) {
 		return nil, notFound()
 	}
 	res := ToResponse(p)
+	res.UserID = 0 // jangan bocorkan data internal ke endpoint publik
 	return &res, nil
 }
 

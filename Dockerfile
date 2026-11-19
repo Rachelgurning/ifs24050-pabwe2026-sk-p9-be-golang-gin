@@ -1,7 +1,7 @@
 FROM golang:1.27-alpine AS build
 WORKDIR /src
 COPY . .
-RUN go mod tidy && CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/server ./cmd/server
+RUN go mod tidy && CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/server .
 
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata
