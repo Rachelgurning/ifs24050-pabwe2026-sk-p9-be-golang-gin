@@ -29,7 +29,11 @@ func (h *Handler) Register(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusCreated, "Registrasi berhasil", gin.H{"user": user, "token": token})
+	response.Success(c, http.StatusCreated, "Registrasi berhasil", gin.H{
+		"id": user.ID, "name": user.Name, "username": user.Username, "email": user.Email, "role": user.Role,
+		"bio": user.Bio, "created_at": user.CreatedAt, "updated_at": user.UpdatedAt,
+		"user": user, "token": token,
+	})
 }
 
 func (h *Handler) Login(c *gin.Context) {
@@ -57,7 +61,7 @@ func (h *Handler) Profile(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Profil berhasil diambil", gin.H{"user": user})
+	response.Success(c, http.StatusOK, "Profil berhasil diambil", user)
 }
 
 func (h *Handler) UpdateProfile(c *gin.Context) {
@@ -71,5 +75,5 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Profil berhasil diperbarui", gin.H{"user": user})
+	response.Success(c, http.StatusOK, "Profil berhasil diperbarui", user)
 }

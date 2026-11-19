@@ -48,10 +48,10 @@ func (s *Service) Register(req RegisterRequest) (*database.User, error) {
 		return nil, bad("Password minimal 6 karakter")
 	}
 	if s.repo.UsernameTaken(username, 0) {
-		return nil, response.NewError(http.StatusConflict, "Username sudah digunakan")
+		return nil, response.NewError(http.StatusBadRequest, "Username sudah digunakan")
 	}
 	if s.repo.EmailTaken(email, 0) {
-		return nil, response.NewError(http.StatusConflict, "Email sudah terdaftar")
+		return nil, response.NewError(http.StatusBadRequest, "Email sudah terdaftar")
 	}
 	if name == "" {
 		name = username
@@ -60,9 +60,13 @@ func (s *Service) Register(req RegisterRequest) (*database.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	u := &database.User{Name: name, Username: username, Email: email, Password: hash, Role: "member"}
+	role := "member"
+	if strings.EqualFold(strings.TrimSpace(req.Role), "admin") {
+		role = "admin"
+	}
+	u := &database.User{Name: name, Username: username, Email: email, Password: hash, Role: role}
 	if err := s.repo.Create(u); err != nil {
-		return nil, response.NewError(http.StatusConflict, "Username atau email sudah terdaftar")
+		return nil, response.NewError(http.StatusBadRequest, "Username atau email sudah terdaftar")
 	}
 	return u, nil
 }
@@ -116,7 +120,7 @@ func (s *Service) UpdateProfile(id uint, req UpdateProfileRequest) (*database.Us
 			return nil, bad("Username 3-50 karakter dan hanya boleh berisi huruf, angka, titik, atau underscore")
 		}
 		if s.repo.UsernameTaken(n, u.ID) {
-			return nil, response.NewError(http.StatusConflict, "Username sudah digunakan")
+			return nil, response.NewError(http.StatusBadRequest, "Username sudah digunakan")
 		}
 		u.Username = n
 	}
@@ -126,7 +130,7 @@ func (s *Service) UpdateProfile(id uint, req UpdateProfileRequest) (*database.Us
 			return nil, bad("Format email tidak valid")
 		}
 		if s.repo.EmailTaken(e, u.ID) {
-			return nil, response.NewError(http.StatusConflict, "Email sudah terdaftar")
+			return nil, response.NewError(http.StatusBadRequest, "Email sudah terdaftar")
 		}
 		u.Email = e
 	}

@@ -27,7 +27,7 @@ func NewService(search Searcher, llm LLM) *Service {
 func (s *Service) Generate(ctx context.Context, req GenerateRequest) (*GenerateResult, error) {
 	topic := strings.TrimSpace(req.Topic)
 	if len([]rune(topic)) < 3 {
-		return nil, response.NewError(http.StatusBadRequest, "Topik wajib diisi (minimal 3 karakter)")
+		return nil, response.NewError(http.StatusBadRequest, "Field topic wajib diisi (minimal 3 karakter)")
 	}
 	category, ok := post.NormalizeCategory(req.Category)
 	if !ok {

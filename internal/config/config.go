@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -37,9 +38,13 @@ func Get(key, fallback string) string {
 
 func Load() *Config {
 	_ = godotenv.Load()
-	port := Get("APP_PORT", "8081")
-	if p := Get("PORT", ""); p != "" {
-		port = p
+	port := "8081"
+	for _, k := range []string{"APP_PORT", "PORT"} {
+		if v := Get(k, ""); v != "" {
+			if _, err := strconv.Atoi(v); err == nil {
+				port = v
+			}
+		}
 	}
 	return &Config{
 		AppEnv:         Get("APP_ENV", "development"),

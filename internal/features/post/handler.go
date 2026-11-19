@@ -32,7 +32,7 @@ func bindPost(c *gin.Context) (PostRequest, bool) {
 }
 
 func (h *Handler) Categories(c *gin.Context) {
-	response.Success(c, http.StatusOK, "Daftar kategori berhasil diambil", gin.H{"categories": Categories})
+	response.Success(c, http.StatusOK, "Daftar kategori berhasil diambil", Categories)
 }
 
 func (h *Handler) PublicList(c *gin.Context) {
@@ -45,7 +45,7 @@ func (h *Handler) PublicList(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Daftar artikel berhasil diambil", gin.H{"posts": posts, "total": len(posts)})
+	response.Success(c, http.StatusOK, "Daftar artikel berhasil diambil", posts)
 }
 
 func (h *Handler) PublicDetail(c *gin.Context) {
@@ -54,7 +54,7 @@ func (h *Handler) PublicDetail(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Detail artikel berhasil diambil", gin.H{"post": p})
+	response.Success(c, http.StatusOK, "Detail artikel berhasil diambil", p)
 }
 
 func (h *Handler) MyPosts(c *gin.Context) {
@@ -63,7 +63,7 @@ func (h *Handler) MyPosts(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Daftar artikel berhasil diambil", gin.H{"posts": posts, "total": len(posts)})
+	response.Success(c, http.StatusOK, "Daftar artikel berhasil diambil", posts)
 }
 
 func (h *Handler) Create(c *gin.Context) {
@@ -76,15 +76,12 @@ func (h *Handler) Create(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusCreated, "Artikel berhasil dibuat", gin.H{"post": p})
+	response.Success(c, http.StatusCreated, "Artikel berhasil dibuat", p)
 }
 
 func (h *Handler) Stats(c *gin.Context) {
 	st := h.svc.Stats(c.GetUint("user_id"))
-	response.Success(c, http.StatusOK, "Statistik artikel berhasil diambil", gin.H{
-		"stats": st, "total_posts": st.TotalPosts, "published_posts": st.PublishedPosts, "draft_posts": st.DraftPosts,
-		"total": st.Total, "published": st.Published, "draft": st.Draft,
-	})
+	response.Success(c, http.StatusOK, "Statistik artikel berhasil diambil", st)
 }
 
 func (h *Handler) Detail(c *gin.Context) {
@@ -97,7 +94,7 @@ func (h *Handler) Detail(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Detail artikel berhasil diambil", gin.H{"post": p})
+	response.Success(c, http.StatusOK, "Detail artikel berhasil diambil", p)
 }
 
 func (h *Handler) Update(c *gin.Context) {
@@ -114,7 +111,7 @@ func (h *Handler) Update(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Artikel berhasil diperbarui", gin.H{"post": p})
+	response.Success(c, http.StatusOK, "Artikel berhasil diperbarui", p)
 }
 
 func (h *Handler) TogglePublish(c *gin.Context) {
@@ -135,7 +132,7 @@ func (h *Handler) TogglePublish(c *gin.Context) {
 	if p.IsPublished {
 		msg = "Artikel berhasil dipublikasikan"
 	}
-	response.Success(c, http.StatusOK, msg, gin.H{"post": p})
+	response.Success(c, http.StatusOK, msg, p)
 }
 
 func (h *Handler) Delete(c *gin.Context) {
@@ -156,7 +153,7 @@ func (h *Handler) AdminUsers(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Daftar pengguna berhasil diambil", gin.H{"users": users, "total": len(users)})
+	response.Success(c, http.StatusOK, "Daftar pengguna berhasil diambil", users)
 }
 
 func (h *Handler) AdminPosts(c *gin.Context) {
@@ -165,7 +162,7 @@ func (h *Handler) AdminPosts(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Daftar seluruh artikel berhasil diambil", gin.H{"posts": posts, "total": len(posts)})
+	response.Success(c, http.StatusOK, "Daftar seluruh artikel berhasil diambil", posts)
 }
 
 func (h *Handler) AdminUserPosts(c *gin.Context) {
@@ -173,10 +170,10 @@ func (h *Handler) AdminUserPosts(c *gin.Context) {
 	if !ok {
 		return
 	}
-	user, posts, err := h.svc.AdminUserPosts(id)
+	posts, err := h.svc.AdminUserPosts(id)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Daftar artikel pengguna berhasil diambil", gin.H{"user": user, "posts": posts, "total": len(posts)})
+	response.Success(c, http.StatusOK, "Daftar artikel pengguna berhasil diambil", posts)
 }

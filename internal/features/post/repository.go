@@ -54,6 +54,14 @@ func (r *Repository) FindByIDForUser(id, userID uint) (*database.Post, error) {
 	return &p, nil
 }
 
+func (r *Repository) FindByID(id uint) (*database.Post, error) {
+	var p database.Post
+	if err := r.db.Preload("User").First(&p, id).Error; err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
 func (r *Repository) SlugExists(slug string, excludeID uint) bool {
 	var n int64
 	r.db.Model(&database.Post{}).Where("slug = ? AND id <> ?", slug, excludeID).Count(&n)

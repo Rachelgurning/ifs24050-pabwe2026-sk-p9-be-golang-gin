@@ -74,8 +74,11 @@ func ToResponse(p *database.Post) PostResponse {
 		ReadingTime: minutes, ReadingTimeText: fmt.Sprintf("%d menit baca", minutes), WordCount: words,
 		CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt,
 	}
+	res.ReadingTimeMinutes = minutes
 	if p.User.ID != 0 {
 		res.Author = &AuthorInfo{ID: p.User.ID, Name: p.User.Name, Username: p.User.Username}
+		res.AuthorName = p.User.Name
+		res.AuthorUsername = p.User.Username
 	}
 	return res
 }
@@ -95,6 +98,17 @@ func NewService(repo *Repository) *Service { return &Service{repo: repo} }
 func notFound() error { return response.NewError(http.StatusNotFound, "Artikel tidak ditemukan") }
 
 func bad(msg string) error { return response.NewError(http.StatusBadRequest, msg) }
+
+func (s *Service) owned(userID, id uint) (*database.Post, error) {
+	p, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, notFound()
+	}
+	if p.UserID != userID {
+		return nil, response.NewError(http.StatusForbidden, "Anda tidak memiliki akses ke artikel ini")
+	}
+	return p, nil
+}
 
 func (s *Service) uniqueSlug(title string, excludeID uint) string {
 	base := Slugify(title)
@@ -155,7 +169,7 @@ func (s *Service) apply(p *database.Post, req PostRequest, creating bool) error 
 			return bad("Konten artikel wajib diisi")
 		}
 		if p.Category == "" {
-			p.Category = "Umum"
+			p.Category = DefaultCategory
 		}
 	}
 	if p.Excerpt == "" {
@@ -198,9 +212,9 @@ func (s *Service) ListMine(userID uint) ([]PostResponse, error) {
 }
 
 func (s *Service) GetMine(userID, id uint) (*PostResponse, error) {
-	p, err := s.repo.FindByIDForUser(id, userID)
+	p, err := s.owned(userID, id)
 	if err != nil {
-		return nil, notFound()
+		return nil, err
 	}
 	res := ToResponse(p)
 	return &res, nil
@@ -219,9 +233,9 @@ func (s *Service) Create(userID uint, req PostRequest) (*PostResponse, error) {
 }
 
 func (s *Service) Update(userID, id uint, req PostRequest) (*PostResponse, error) {
-	p, err := s.repo.FindByIDForUser(id, userID)
+	p, err := s.owned(userID, id)
 	if err != nil {
-		return nil, notFound()
+		return nil, err
 	}
 	oldTitle := p.Title
 	if err := s.apply(p, req, false); err != nil {
@@ -238,9 +252,9 @@ func (s *Service) Update(userID, id uint, req PostRequest) (*PostResponse, error
 }
 
 func (s *Service) TogglePublish(userID, id uint, value *bool) (*PostResponse, error) {
-	p, err := s.repo.FindByIDForUser(id, userID)
+	p, err := s.owned(userID, id)
 	if err != nil {
-		return nil, notFound()
+		return nil, err
 	}
 	next := !p.IsPublished
 	if value != nil {
@@ -255,29 +269,27 @@ func (s *Service) TogglePublish(userID, id uint, value *bool) (*PostResponse, er
 }
 
 func (s *Service) Delete(userID, id uint) error {
-	p, err := s.repo.FindByIDForUser(id, userID)
+	p, err := s.owned(userID, id)
 	if err != nil {
-		return notFound()
+		return err
 	}
 	return s.repo.Delete(p)
 }
 
 func (s *Service) Stats(userID uint) Stats {
-	t, f := true, false
-	total := s.repo.CountByUser(userID, nil)
-	pub := s.repo.CountByUser(userID, &t)
-	draft := s.repo.CountByUser(userID, &f)
-	return Stats{TotalPosts: total, PublishedPosts: pub, DraftPosts: draft, Total: total, Published: pub, Draft: draft}
+	t := true
+	return NewStats(s.repo.CountByUser(userID, nil), s.repo.CountByUser(userID, &t))
 }
 
 func (s *Service) summary(u *database.User) UserSummary {
-	t, f := true, false
+	t := true
+	total := s.repo.CountByUser(u.ID, nil)
+	pub := s.repo.CountByUser(u.ID, &t)
 	return UserSummary{
 		ID: u.ID, Name: u.Name, Username: u.Username, Email: u.Email, Role: u.Role,
-		TotalPosts:     s.repo.CountByUser(u.ID, nil),
-		PublishedPosts: s.repo.CountByUser(u.ID, &t),
-		DraftPosts:     s.repo.CountByUser(u.ID, &f),
-		CreatedAt:      u.CreatedAt,
+		TotalArticles: total, TotalSelesai: pub, BelumSelesai: total - pub,
+		TotalPosts: total, PublishedPosts: pub, TotalPublished: pub, DraftPosts: total - pub,
+		CreatedAt: u.CreatedAt,
 	}
 }
 
@@ -301,15 +313,10 @@ func (s *Service) AdminPosts() ([]PostResponse, error) {
 	return ToResponses(posts), nil
 }
 
-func (s *Service) AdminUserPosts(id uint) (*UserSummary, []PostResponse, error) {
-	u, err := s.repo.FindUser(id)
-	if err != nil {
-		return nil, nil, response.NewError(http.StatusNotFound, "Pengguna tidak ditemukan")
-	}
+func (s *Service) AdminUserPosts(id uint) ([]PostResponse, error) {
 	posts, err := s.repo.ListByUser(id)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	sum := s.summary(u)
-	return &sum, ToResponses(posts), nil
+	return ToResponses(posts), nil
 }
