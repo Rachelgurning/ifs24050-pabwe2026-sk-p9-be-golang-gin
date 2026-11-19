@@ -1,0 +1,7 @@
+/server
+/main
+/app
+*.exe
+.env
+*.db
+coverage.out
